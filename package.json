@@ -1,0 +1,20 @@
+{
+  "name": "tunk-wechat",
+  "version": "3.5.0",
+  "description": "tunk支持微信小程序组件",
+  "keywords": [
+    "tunk",
+    "state management",
+    "framework",
+    "wechat"
+  ],
+  "main": "tunk-wechat.js",
+  "author": "steven chen <522702986@qq.com>",
+  "license": "MIT",
+  "files": [
+    "tunk-wechat.js"
+  ],
+  "dependencies": {
+    "apply.js": "latest"
+  }
+}
