@@ -17,9 +17,9 @@ var apply = require('apply.js');
             Page(connect(obj, this, 'page'));
         };
 
-        wechat.Component = function (obj) {
-            Component(connect(obj, this, 'component'));
-        };
+        // wechat.Component = function (obj) {
+        //     Component(connect(obj, this, 'component'));
+        // };
 
         utils.hook('setState', function (origin) {
             return function (newState, options) {
