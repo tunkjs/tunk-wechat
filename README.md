@@ -7,6 +7,11 @@ tunk-wechat使tunk支持微信小程序，负责定义视图层如何 **触发Ac
 
 tunk灵活的通信机制可以有效避开状态管理的性能问题，为了提高tunk与小程序协作能力，我们也做了有针对性的优化。譬如，隐藏的页面不会被注入新状态，提供onBeforeStateChange钩子控制如何setData
 
+### 安装
+````javascript
+npm install tunk-wechat -S
+````
+
 ----
 
 [document](https://github.com/tunkjs/gitbook-tunkjs/blob/master/doc/plugins/tunk-wechat.md)
