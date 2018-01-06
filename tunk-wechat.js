@@ -26,17 +26,17 @@ var apply = require('apply.js');
                 origin(newState, options);
 
                 setTimeout(function () {
-                    var stateChangeTargets = [], res;
+                    var stateChangeTargets = [];
                     if (pipes && pipes.length) for (var i = 0, l = pipes.length; i < l; i++) if (pipes[i]) {
                         statePath = pipes[i].statePath;
                         // 只更新 changedFields 字段
                         if (statePath[1] && changedFields.indexOf(statePath[1]) === -1) continue;
-                        //减少克隆次数，分发出去到达 View 的数据用同一个副本，减少调用 hooks.getState
                         (function (targetObject, propName, newValue, options) {
                             if (targetObject._hidden_) {
                                 targetObject._stateDataChanged_ = targetObject._stateDataChanged_ || [];
-                                if(targetObject._stateDataChanged_.indexOf(propName) === -1) targetObject._stateDataChanged_.push(propName);
+                                if (targetObject._stateDataChanged_.indexOf(propName) === -1) targetObject._stateDataChanged_.push(propName);
                             } else {
+                                targetObject._state_ = targetObject._state_ || {};
                                 if (stateChangeTargets.indexOf(targetObject) === -1) stateChangeTargets.push(targetObject);
                                 targetObject._state_[propName] = newValue;
                             }
@@ -62,12 +62,25 @@ var apply = require('apply.js');
 
             if (actions && typeof actions === 'object') {
                 for (var x in actions) {
-                    if (actions[x] && typeof actions[x] === 'string' && actions[x].indexOf('.') > -1) {
-                        (function (action) {
-                            obj[x] = function () {
-                                utils.dispatchAction(action[0], action[1], arguments)
+                    if (actions[x] && typeof actions[x] === 'string') {
+                        if (actions[x].indexOf('.') > -1) {
+                            (function (action) {
+                                obj[x] = function () {
+                                    utils.dispatchAction(action[0], action[1], arguments)
+                                }
+                            })(actions[x].split('.'));
+                        }else {
+                            var proto = _getModule(actions[x]).__proto__,
+                                protoNames = Object.getOwnPropertyNames(proto);
+                                obj[x] = {};
+                            for (var i = 0, y = protoNames[0]; i < protoNames.length; i++ , y = protoNames[i]) if (proto[y].options) {
+                                (function(target, moduleName, actionName){
+                                    target[actionName] = function () {
+                                        utils.dispatchAction(moduleName, actionName, arguments)
+                                    };
+                                })(obj[x], actions[x], y)
                             }
-                        })(actions[x].split('.'));
+                        }
                     } else {
                         throw '[tunk-wechat]:the action value should be like "moduleName.actionName"';
                     }
@@ -91,7 +104,7 @@ var apply = require('apply.js');
                     }
                 }
 
-                _defineStateData(state, data);
+                //_defineStateData(state, data);
 
                 obj.onShow = function () {
                     this._hidden_ = false;
@@ -116,20 +129,20 @@ var apply = require('apply.js');
 
             } else if (type === 'app') {
 
-                var onLaunch = obj.onLaunch;
-                obj.onLaunch = function () {
-                    return apply(onLaunch, arguments, this);
-                };
+                // var onLaunch = obj.onLaunch;
+                // obj.onLaunch = function () {
+                //     return apply(onLaunch, arguments, this);
+                // };
 
-                obj.onShow = function () {
-                    _hidden = false;
-                    if (onShow) apply(onShow, arguments, this);
-                };
+                // obj.onShow = function () {
+                //     _hidden = false;
+                //     if (onShow) apply(onShow, arguments, this);
+                // };
 
-                obj.onHide = function () {
-                    _hidden = true;
-                    if (onHide) apply(onHide, arguments, this);
-                };
+                // obj.onHide = function () {
+                //     _hidden = true;
+                //     if (onHide) apply(onHide, arguments, this);
+                // };
             }
 
             return obj;
@@ -168,13 +181,13 @@ var apply = require('apply.js');
         function _setState(target) {
             var tmp = {};
             if (target.onBeforeSetState) {
-                res = target.onBeforeStateChange(target._state_);
+                var res = target.onBeforeSetState(target._state_);
                 if (res && typeof res !== 'object') throw '[tunk-wechat]:wrong data type from onBeforeSetState.';
                 target.setData(res || target._state_);
             } else {
                 target.setData(target._state_);
             }
-            target._state_ = {};
+            target._state_ = null;
         }
         function _refreshState(target) {
             var props = target._stateDataChanged_, statePath;
@@ -184,10 +197,9 @@ var apply = require('apply.js');
                     target._state_[props[i]] = utils.hooks.getState(statePath, utils.modules[statePath[0]].options);
                 }
                 _setState(target);
-                
+
                 target._stateDataChanged_ = null;
             }
-
         }
 
         function _disconnect(context) {
@@ -203,7 +215,10 @@ var apply = require('apply.js');
                 }
             }
         }
-
+        function _getModule(moduleName) {
+            if (!utils.modules[moduleName]) throw '[tunk-wechat]:unknown module name ' + moduleName;
+            return utils.modules[moduleName];
+        }
 
     };
 
