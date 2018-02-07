@@ -17,11 +17,18 @@ var apply = require('apply.js');
             Page(connect(obj, this, 'page'));
         };
 
+        wechat.Component = function (obj) {
+            obj.methods = obj.methods || {};
+            Component(connect(obj, this, 'component'));
+        };
+
         utils.hook('setState', function (origin) {
             return function (newState, options) {
                 var pipes = connections[options.moduleName],
-                    changedFields = Object.keys(origin(newState, options)),
+                    changedFields = Object.keys(newState),
                     statePath;
+
+                origin(newState, options);
 
                 setTimeout(function () {
                     var stateChangeTargets = [];
@@ -34,9 +41,9 @@ var apply = require('apply.js');
                                 targetObject._stateDataChanged_ = targetObject._stateDataChanged_ || [];
                                 if (targetObject._stateDataChanged_.indexOf(propName) === -1) targetObject._stateDataChanged_.push(propName);
                             } else {
-                                targetObject._state_ = targetObject._state_ || {};
+                                targetObject.data._state_ = targetObject.data._state_ || {};
                                 if (stateChangeTargets.indexOf(targetObject) === -1) stateChangeTargets.push(targetObject);
-                                targetObject._state_[propName] = newValue;
+                                targetObject.data._state_[propName] = newValue;
                             }
                         })(pipes[i].comp, pipes[i].propName, !pipes[i].comp._hidden_ && utils.hooks.getState(statePath, options), options);
                     }
@@ -49,15 +56,21 @@ var apply = require('apply.js');
 
         function connect(obj, context, type) {
 
+            var comp;
             var onLoad = obj.onLoad;
             var onUnload = obj.onUnload
             var onShow = obj.onShow
             var onHide = obj.onHide
-
             var data = obj.data = obj.data || {};
             var state = obj.state;
             var actions = obj.actions;
 
+            if(type === 'component'){
+                comp = obj;
+                obj = obj.methods;
+            }
+
+            
             if (actions && typeof actions === 'object') {
                 for (var x in actions) {
                     if (actions[x] && typeof actions[x] === 'string') {
@@ -94,7 +107,7 @@ var apply = require('apply.js');
             if (type === 'page') {
 
                 // 实时状态容器
-                obj._state_ = {};
+                data._state_ = {};
 
                 if (state && typeof state === 'object') {
                     for (var x in state) if (state.hasOwnProperty(x)) {
@@ -143,7 +156,7 @@ var apply = require('apply.js');
                 // };
             }
 
-            return obj;
+            return comp || obj;
         }
 
         function _defineStateData(state, data) {
@@ -179,20 +192,20 @@ var apply = require('apply.js');
         function _setState(target) {
             var tmp = {};
             if (target.onBeforeSetState) {
-                var res = target.onBeforeSetState(target._state_);
+                var res = target.onBeforeSetState(target.data._state_);
                 if (res && typeof res !== 'object') throw '[tunk-wechat]:wrong data type from onBeforeSetState.';
-                target.setData(res || target._state_);
+                target.setData(res || target.data._state_);
             } else {
-                target.setData(target._state_);
+                target.setData(target.data._state_);
             }
-            target._state_ = null;
+            target.data._state_ = null;
         }
         function _refreshState(target) {
             var props = target._stateDataChanged_, statePath;
             if (props) {
                 for (var i = 0, l = props.length; i < l; i++) {
                     statePath = target.state[props[i]];
-                    target._state_[props[i]] = utils.hooks.getState(statePath, utils.modules[statePath[0]].options);
+                    target.data._state_[props[i]] = utils.hooks.getState(statePath, utils.modules[statePath[0]].options);
                 }
                 _setState(target);
 
