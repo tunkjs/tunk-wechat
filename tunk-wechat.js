@@ -77,7 +77,7 @@ var apply = require('apply.js');
                         if (actions[x].indexOf('.') > -1) {
                             (function (action) {
                                 obj[x] = function () {
-                                    utils.dispatchAction(action[0], action[1], arguments)
+                                    utils.runAction(action[0], action[1], arguments)
                                 }
                             })(actions[x].split('.'));
                         }else {
@@ -87,7 +87,7 @@ var apply = require('apply.js');
                             for (var i = 0, y = protoNames[0]; i < protoNames.length; i++ , y = protoNames[i]) if (proto[y].options) {
                                 (function(target, moduleName, actionName){
                                     target[actionName] = function () {
-                                        utils.dispatchAction(moduleName, actionName, arguments)
+                                        utils.runAction(moduleName, actionName, arguments)
                                     };
                                 })(obj[x], actions[x], y)
                             }
@@ -101,7 +101,7 @@ var apply = require('apply.js');
             obj.dispatch = function (actionPath) {
                 if (typeof actionPath !== 'string' || actionPath.indexOf('.') === -1) throw '[tunk-wechat]:the first argument should has dot between module name and action name: ' + actionPath;
                 actionPath = actionPath.split('.');
-                return utils.dispatchAction(actionPath[0], actionPath[1], Array.prototype.slice.call(arguments, 1));
+                return utils.runAction(actionPath[0], actionPath[1], Array.prototype.slice.call(arguments, 1));
             }
 
             if (type === 'page') {
